@@ -1,0 +1,312 @@
+<UserControl x:Class="EnterpriseKnowledgeHub.Views.DatabaseExplorerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800"
+             Loaded="UserControl_Loaded">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Panel lateral con lista de tablas -->
+        <Border Grid.Column="0" 
+                Background="#F9FAFB" 
+                BorderBrush="#E5E7EB" 
+                BorderThickness="0,0,1,0" 
+                Padding="15">
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <TextBlock Grid.Row="0" 
+                           Text="🗃️ Explorador de Base de Datos" 
+                           Style="{StaticResource SubHeaderTextStyle}"/>
+
+                <!-- Search Box -->
+                <TextBox Grid.Row="1" 
+                         Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged}" 
+                         Style="{StaticResource ModernTextBoxStyle}"
+                         Tag="Buscar en tabla actual..."
+                         Margin="0,10">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding SearchTableCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+
+                <!-- Lista de tablas -->
+                <ListBox Grid.Row="2" 
+                         x:Name="TablesList"
+                         ItemsSource="{Binding DatabaseTables}" 
+                         SelectedItem="{Binding SelectedTable}"
+                         SelectionChanged="TablesList_SelectionChanged"
+                         BorderThickness="0" 
+                         Background="Transparent"
+                         Margin="0,10">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="White" 
+                                    BorderBrush="#E5E7EB" 
+                                    BorderThickness="1" 
+                                    CornerRadius="6" 
+                                    Padding="12" 
+                                    Margin="0,3">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Icon}" 
+                                                   FontSize="16" 
+                                                   VerticalAlignment="Center" 
+                                                   Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding Name}" 
+                                                   FontWeight="SemiBold" 
+                                                   FontSize="14"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Description}" 
+                                               FontSize="12" 
+                                               Foreground="#6B7280" 
+                                               TextWrapping="Wrap" 
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+
+                <!-- Controles de paginación -->
+                <StackPanel Grid.Row="3" 
+                           Orientation="Horizontal" 
+                           HorizontalAlignment="Center"
+                           Margin="0,10,0,0">
+                    <Button Content="◀" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CurrentPage, Converter={StaticResource PageNumberToBoolConverter}}"
+                            Width="30" Height="30" 
+                            Margin="2"/>
+                    <TextBlock Text="{Binding CurrentPage}" 
+                               VerticalAlignment="Center" 
+                               FontWeight="Bold" 
+                               Margin="10,0"/>
+                    <TextBlock Text="/" 
+                               VerticalAlignment="Center" 
+                               Margin="2,0"/>
+                    <TextBlock Text="{Binding TotalPages}" 
+                               VerticalAlignment="Center" 
+                               Margin="2,0,10,0"/>
+                    <Button Content="▶" 
+                            Style="{StaticResource ModernButtonStyle}"
+                            Command="{Binding NextPageCommand}"
+                            IsEnabled="{Binding CurrentPage, Converter={StaticResource PageNumberToNextBoolConverter}}"
+                            Width="30" Height="30" 
+                            Margin="2"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Área principal de contenido -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- Header with actions -->
+                <RowDefinition Height="Auto"/>  <!-- Table explanation -->
+                <RowDefinition Height="*"/>     <!-- Data grid -->
+                <RowDefinition Height="Auto"/>  <!-- Status bar -->
+            </Grid.RowDefinitions>
+
+            <!-- Header con acciones -->
+            <Border Grid.Row="0" 
+                    Background="#F8FAFC" 
+                    BorderBrush="#E5E7EB" 
+                    BorderThickness="0,0,0,1" 
+                    Padding="20,15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding SelectedTable.Name, StringFormat='Datos de: {0}'}" 
+                                   FontSize="20" 
+                                   FontWeight="Bold" 
+                                   Foreground="#1F2937"/>
+                        <TextBlock Text="{Binding SelectedTable.Description}" 
+                                   FontSize="14" 
+                                   Foreground="#6B7280"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" 
+                               Orientation="Horizontal" 
+                               VerticalAlignment="Center">
+                        <Button Content="🔄 Refrescar" 
+                                Style="{StaticResource ModernButtonStyle}"
+                                Command="{Binding RefreshDataCommand}"
+                                Margin="5"/>
+                        <Button Content="🔍 Buscar" 
+                                Style="{StaticResource ModernButtonStyle}"
+                                Command="{Binding SearchTableCommand}"
+                                Margin="5"/>
+                        <Button Content="📤 Exportar" 
+                                Style="{StaticResource ModernButtonStyle}"
+                                Command="{Binding ExportToCSVCommand}"
+                                Margin="5"/>
+                        <Button Content="🗑️ Limpiar Filtro" 
+                                Style="{StaticResource ModernButtonStyle}"
+                                Command="{Binding ClearSearchCommand}"
+                                Margin="5"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Explicación de la tabla -->
+            <Expander Grid.Row="1" 
+                     Header="📖 Explicación de la Tabla" 
+                     Margin="20,10" 
+                     IsExpanded="True"
+                     Background="White" 
+                     BorderBrush="#E5E7EB" 
+                     BorderThickness="1" 
+                     CornerRadius="6">
+                <TextBlock Text="{Binding TableExplanation}" 
+                           TextWrapping="Wrap" 
+                           Padding="15" 
+                           FontSize="14" 
+                           LineHeight="22"
+                           Foreground="#374151"/>
+            </Expander>
+
+            <!-- Contenido principal con TabControl para diferentes vistas -->
+            <TabControl Grid.Row="2" 
+                       Margin="20,0,20,10" 
+                       Background="White" 
+                       BorderBrush="#E5E7EB" 
+                       BorderThickness="1">
+
+                <!-- Tab Albaranes -->
+                <TabItem Header="📋 Albaranes" 
+                        Visibility="{Binding SelectedTable.Name, Converter={StaticResource TableNameToVisibilityConverter}, ConverterParameter=Albaranes}">
+                    <DataGrid ItemsSource="{Binding Albaranes}" 
+                             AutoGenerateColumns="False" 
+                             IsReadOnly="True" 
+                             GridLinesVisibility="Horizontal" 
+                             AlternatingRowBackground="#F9FAFB"
+                             Margin="10">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Número" Binding="{Binding NumeroAlbaran}" Width="120"/>
+                            <DataGridTextColumn Header="Proveedor" Binding="{Binding NombreProveedor}" Width="200"/>
+                            <DataGridTextColumn Header="Fecha" Binding="{Binding FechaAlbaran, StringFormat=dd/MM/yyyy}" Width="100"/>
+                            <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="100"/>
+                            <DataGridTextColumn Header="Importe" Binding="{Binding ImporteTotal, StringFormat=C}" Width="120"/>
+                            <DataGridTextColumn Header="Referencia" Binding="{Binding ReferenciaExterna}" Width="150"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+
+                <!-- Tab Proveedores -->
+                <TabItem Header="🏢 Proveedores" 
+                        Visibility="{Binding SelectedTable.Name, Converter={StaticResource TableNameToVisibilityConverter}, ConverterParameter=Proveedores}">
+                    <DataGrid ItemsSource="{Binding Proveedores}" 
+                             AutoGenerateColumns="False" 
+                             IsReadOnly="True" 
+                             GridLinesVisibility="Horizontal" 
+                             AlternatingRowBackground="#F9FAFB"
+                             Margin="10">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100"/>
+                            <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="200"/>
+                            <DataGridTextColumn Header="NIF" Binding="{Binding NIF}" Width="100"/>
+                            <DataGridTextColumn Header="Ciudad" Binding="{Binding Ciudad}" Width="150"/>
+                            <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="120"/>
+                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="200"/>
+                            <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+
+                <!-- Tab Artículos -->
+                <TabItem Header="📦 Artículos" 
+                        Visibility="{Binding SelectedTable.Name, Converter={StaticResource TableNameToVisibilityConverter}, ConverterParameter=Artículos}">
+                    <DataGrid ItemsSource="{Binding Articulos}" 
+                             AutoGenerateColumns="False" 
+                             IsReadOnly="True" 
+                             GridLinesVisibility="Horizontal" 
+                             AlternatingRowBackground="#F9FAFB"
+                             Margin="10">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="100"/>
+                            <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="250"/>
+                            <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="120"/>
+                            <DataGridTextColumn Header="U.M." Binding="{Binding UnidadMedida}" Width="60"/>
+                            <DataGridTextColumn Header="Precio Compra" Binding="{Binding PrecioCompra, StringFormat=C}" Width="100"/>
+                            <DataGridTextColumn Header="Precio Venta" Binding="{Binding PrecioVenta, StringFormat=C}" Width="100"/>
+                            <DataGridTextColumn Header="Stock" Binding="{Binding StockActual}" Width="80"/>
+                            <DataGridCheckBoxColumn Header="Activo" Binding="{Binding Activo}" Width="60"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
+
+            <!-- Barra de estado -->
+            <Border Grid.Row="3" 
+                    Background="#F3F4F6" 
+                    BorderBrush="#E5E7EB" 
+                    BorderThickness="0,1,0,0" 
+                    Padding="20,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock Text="Página:" Margin="0,0,5,0" FontSize="12"/>
+                        <TextBlock Text="{Binding CurrentPage}" FontWeight="Bold" FontSize="12" Margin="0,0,5,0"/>
+                        <TextBlock Text="de" FontSize="12" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding TotalPages}" FontWeight="Bold" FontSize="12" Margin="0,0,15,0"/>
+                        <TextBlock Text="Registros por página:" FontSize="12" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding PageSize}" FontWeight="Bold" FontSize="12"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <ProgressBar IsIndeterminate="True" 
+                                    Width="100" 
+                                    Height="16" 
+                                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Margin="0,0,10,0"/>
+                        <TextBlock Text="Datos actualizados" 
+                                  FontSize="12" 
+                                  Foreground="#16A34A"
+                                  Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Overlay de carga -->
+            <Border Grid.Row="2" 
+                   Background="#80FFFFFF" 
+                   Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                   Panel.ZIndex="100">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True" Width="150" Height="20" Margin="0,0,0,10"/>
+                    <TextBlock Text="Cargando datos..." HorizontalAlignment="Center" FontSize="16"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
